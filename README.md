@@ -1,15 +1,14 @@
 # AI Text Analytics API (FastAPI)
 
-A production-style microservice for text analysis with:
+A production-style microservice that provides:
 - Health check
-- Sentiment (TextBlob + VADER)
-- Keywords
-- Readability (Flesch reading ease)
-- PII detection (Presidio)
-- NER (spaCy)
-- Extractive summarization
-- Multi-language detection + translation (googletrans)
-- Composite `/analyze/full` endpoint
+- Text analysis (sentiment, keywords, readability, PII detection)
+- NER (Named Entity Recognition)
+- Summarization
+- Multilingual support
+- Composite analysis endpoint
 
-## Quickstart
-1. Create & activate venv:
+## Run locally
+```bash
+uvicorn main:app --reload
+
