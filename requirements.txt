@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+scikit-learn
+nltk
+spacy
+textblob
+presidio-analyzer
+pytest
+fastapi
+uvicorn
+spacy
+vaderSentiment
+pydantic
+python-multipart
+googletrans
+langdetect
