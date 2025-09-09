@@ -1,0 +1,28 @@
+name: Build Docker image (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t ai-text-analytics:latest .
+
+      - name: Save Docker image to tar
+        run: |
+          docker save ai-text-analytics:latest -o image.tar
+
+      - name: Upload Docker image tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: image.tar

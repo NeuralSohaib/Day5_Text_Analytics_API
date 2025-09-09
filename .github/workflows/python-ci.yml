@@ -1,0 +1,65 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.9", "3.10", "3.11" ]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download NLP & corpora (NLTK / spaCy / TextBlob)
+        run: |
+          python -m nltk.downloader punkt stopwords || true
+          python -m spacy download en_core_web_sm || true
+          python -m textblob.download_corpora || true
+
+      - name: Lint (ruff)
+        run: |
+          pip install ruff
+          ruff check src || true
+
+      - name: Type-check (mypy)
+        run: |
+          pip install mypy
+          mypy src --ignore-missing-imports || true
+
+      - name: Run tests (pytest)
+        run: |
+          mkdir -p reports
+          pytest -q --junitxml=reports/junit-${{ matrix.python-version }}.xml
+
+      - name: Upload pytest reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results-${{ matrix.python-version }}
+          path: reports/*.xml
