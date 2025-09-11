@@ -1,58 +1,100 @@
-# src/main.py
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Any, Dict
-from .analysis import (
+from fastapi import FastAPI, Query
+
+from src.analysis import (
     analyze_sentiment,
     extract_keywords,
-    readability_score,
     detect_pii,
     extract_entities,
     summarize_text,
-    full_analysis,
 )
-app = FastAPI(title="AI Text Analytics API", version="0.1.0")
 
+app = FastAPI(title="AI Text Analytics API")
 
-class TextRequest(BaseModel):
-    text: str
-
-
+# -----------------
+# Health Check
+# -----------------
 @app.get("/health")
-def health() -> Dict[str, Any]:
-    return {"status": "ok", "version": "0.1.0"}
+async def health_check():
+    return {"status": "ok", "message": "API is running!"}
 
-
+# -----------------
+# Sentiment Analysis
+# -----------------
 @app.post("/analyze/sentiment")
-def sentiment_endpoint(req: TextRequest):
-    return analyze_sentiment(req.text)
+async def sentiment_endpoint(text: str):
+    return {"sentiment": analyze_sentiment(text)}
 
-
+# -----------------
+# Keyword Extraction
+# -----------------
 @app.post("/analyze/keywords")
-def keywords_endpoint(req: TextRequest):
-    return extract_keywords(req.text)
+async def keywords_endpoint(text: str):
+    return {"keywords": extract_keywords(text)}
+
+# -----------------
+# Readability
 
 
-@app.post("/analyze/readability")
-def readability_endpoint(req: TextRequest):
-    return readability_score(req.text)
-
-
+# -----------------
+# PII Detection
+# -----------------
 @app.post("/analyze/pii")
-def pii_endpoint(req: TextRequest):
-    return detect_pii(req.text)
+async def pii_endpoint(text: str):
+    return {"pii_entities": detect_pii(text)}
+
+# -----------------
+# Multilingual Analysis
+# -----------------
+
+
+# -----------------
+# Named Entity Recognition (NER)
+# -----------------
+@app.post("/analyze/summarize")
+def summarize_endpoint(text: str = Query(...)):
+    """
+    Composite summarization endpoint:
+      - summary: { "summary": "..." }
+      - sentiment: dict
+      - keywords: list[str]
+      - pii: dict (found PII items, if any)
+      - entities: list[dict]
+    """
+    # summary
+    summary_result = summarize_text(text)
+
+    # sentiment
+    sentiment_result = analyze_sentiment(text)
+
+    # keywords
+    keywords_result = extract_keywords(text)
+    keyword_list = (
+        keywords_result.get("keywords") if isinstance(keywords_result, dict) else keywords_result
+    )
+
+    # pii detection
+    pii_result = detect_pii(text)
+
+    # named entity recognition
+    entities_result = extract_entities(text)
+
+    return {
+        "summary": summary_result,
+        "sentiment": sentiment_result,
+        "keywords": keyword_list or [],
+        "pii": pii_result or {},
+        "entities": entities_result or [],   # <- now included
+    }
+
 
 
 @app.post("/analyze/entities")
-def entities_endpoint(req: TextRequest):
-    return extract_entities(req.text)
+def entities_endpoint(text: str = Query(...)):
+    """
+    Extract named entities from text.
+    Example: "Barack Obama was the 44th President of the USA."
+    """
+    entities_result = extract_entities(text)
+    return {"entities": entities_result or []}
 
 
-@app.post("/analyze/summary")
-def summary_endpoint(req: TextRequest):
-    return summarize_text(req.text)
-
-
-@app.post("/analyze/full")
-def full_endpoint(req: TextRequest):
-    return full_analysis(req.text)

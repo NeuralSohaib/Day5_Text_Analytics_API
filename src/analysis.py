@@ -11,7 +11,8 @@ from presidio_analyzer import AnalyzerEngine
 from .utils import detect_language, translate_to_en
 import os
 import re
-
+from src.utils import detect_language, translate_to_en
+import re
 CI_SKIP_PRESIDIO = os.environ.get("SKIP_PRESIDIO", "false").lower() in ("1","true","yes")
 
 def detect_pii(text: str):
@@ -154,18 +155,22 @@ def extract_entities(text: str) -> Dict[str, List[Dict[str, Any]]]:
 # --------------------------
 # PII detection via Presidio
 # --------------------------
-def detect_pii(text: str) -> Dict[str, List[Dict[str, Any]]]:
-    results = PII_ANALYZER.analyze(text=text, language="en")
-    entities = []
-    for r in results:
-        entities.append({
-            "entity_type": r.entity_type,
-            "start": r.start,
-            "end": r.end,
-            "text": text[r.start:r.end],
-            "score": round(r.score, 3)
-        })
-    return {"pii_entities": entities}
+
+
+def detect_pii(text: str):
+    results = {}
+
+    # Email detection
+    emails = re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
+    if emails:
+        results["emails"] = emails
+
+    # Phone detection
+    phones = re.findall(r"\+?\d[\d -]{8,}\d", text)
+    if phones:
+        results["phones"] = phones
+
+    return results
 
 
 # --------------------------
